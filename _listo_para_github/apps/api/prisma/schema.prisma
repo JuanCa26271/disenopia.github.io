@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDIENTE
+  EN_PRODUCCION
+  IMPRESO
+  LISTO
+  ENTREGADO
+  CANCELADO
+
+  @@map("order_status")
+}
+
+enum ExtraType {
+  TELA_TRASLUCIDA
+  MONO
+  PLANTA_PEQUENA
+  HOJA_OPALINA
+  FLORES
+  AROMA
+  LIBRO_MINIATURA
+  CENTRO_MESA
+  OTRO
+
+  @@map("extra_type")
+}
+
+enum AssetPurpose {
+  PRODUCT_REFERENCE
+  COLLECTION_REFERENCE
+  SYSTEM_CUSTOMIZATION
+  ORDER_CUSTOMIZATION
+  LEGACY
+
+  @@map("asset_purpose")
+}
+
+model AdminUser {
+  id                  String    @id @default(uuid()) @db.Uuid
+  username            String    @unique
+  passwordHash        String    @map("password_hash")
+  mustChangePassword  Boolean   @default(true) @map("must_change_password")
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until") @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@map("admin_users")
+}
+
+model Category {
+  id                  String    @id @default(uuid()) @db.Uuid
+  name                String    @unique
+  basePrepTimeMinutes Int       @default(0) @map("base_prep_time_minutes")
+  isActive            Boolean   @default(true) @map("is_active")
+  products            Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id                 String                  @id @default(uuid()) @db.Uuid
+  categoryId         String                  @map("category_id") @db.Uuid
+  category           Category                @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  name               String
+  description        String                  @default("")
+  basePrice          Decimal                 @map("base_price") @db.Decimal(10, 2)
+  prepTimeMinutes    Int                     @map("prep_time_minutes")
+  stockAvailable     Int                     @default(0) @map("stock_available")
+  isCustomizable     Boolean                 @default(false) @map("is_customizable")
+  isActive           Boolean                 @default(true) @map("is_active")
+  orderItems         OrderItem[]
+  referenceImageRows ProductReferenceImage[]
+
+  @@index([categoryId, isActive])
+  @@map("products")
+}
+
+model ProductReferenceImage {
+  id        String  @id @default(uuid()) @db.Uuid
+  productId String  @map("product_id") @db.Uuid
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  imageUrl  String  @map("image_url")
+  altText   String? @map("alt_text")
+  sortOrder Int     @default(0) @map("sort_order")
+
+  @@unique([productId, sortOrder])
+  @@map("product_reference_images")
+}
+
+model CustomizationExtra {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  extraType             ExtraType                @map("extra_type")
+  name                  String
+  additionalCost        Decimal                  @map("additional_cost") @db.Decimal(10, 2)
+  additionalPrepMinutes Int                      @default(0) @map("additional_prep_minutes")
+  previewImageUrl       String?                  @map("preview_image_url")
+  isAvailable           Boolean                  @default(true) @map("is_available")
+  itemCustomizations    OrderItemCustomization[]
+
+  @@index([isAvailable, extraType])
+  @@map("customization_extras")
+}
+
+model TypographyFont {
+  id                 String                   @id @default(uuid()) @db.Uuid
+  fontFamilyName     String                   @unique @map("font_family_name")
+  googleFontUrl      String                   @map("google_font_url")
+  isActive           Boolean                  @default(true) @map("is_active")
+  itemCustomizations OrderItemCustomization[]
+
+  @@map("typography_fonts")
+}
+
+model DesignTemplate {
+  id                 String                   @id @default(uuid()) @db.Uuid
+  name               String
+  eventCategory      String                   @map("event_category")
+  templateImageUrl   String                   @map("template_image_url")
+  printWidthMm       Decimal                  @map("print_width_mm") @db.Decimal(8, 2)
+  printHeightMm      Decimal                  @map("print_height_mm") @db.Decimal(8, 2)
+  isActive           Boolean                  @default(true) @map("is_active")
+  itemCustomizations OrderItemCustomization[]
+
+  @@index([eventCategory, isActive])
+  @@map("design_templates")
+}
+
+model Customer {
+  id                 String   @id @default(uuid()) @db.Uuid
+  firstNameEncrypted String   @map("first_name_encrypted")
+  lastNameEncrypted  String   @map("last_name_encrypted")
+  phoneEncrypted     String   @map("phone_encrypted")
+  encryptionIv       String   @map("encryption_iv")
+  encryptionAuthTag  String   @map("encryption_auth_tag")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  orders             Order[]
+
+  @@map("customers")
+}
+
+model Order {
+  id                    String      @id @default(uuid()) @db.Uuid
+  ticketCode            String      @unique @map("ticket_code")
+  customerId            String      @map("customer_id") @db.Uuid
+  customer              Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  status                OrderStatus @default(PENDIENTE)
+  totalAmount           Decimal     @map("total_amount") @db.Decimal(10, 2)
+  calculatedReadyDate   DateTime    @map("calculated_ready_date") @db.Date
+  customerRequestedDate DateTime    @map("customer_requested_date") @db.Date
+  createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  items                 OrderItem[]
+
+  @@index([status, calculatedReadyDate])
+  @@index([customerRequestedDate])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                  String                   @id @default(uuid()) @db.Uuid
+  orderId             String                   @map("order_id") @db.Uuid
+  order               Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId           String                   @map("product_id") @db.Uuid
+  product             Product                  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity            Int
+  unitPriceCalculated Decimal                  @map("unit_price_calculated") @db.Decimal(10, 2)
+  subtotal            Decimal                  @db.Decimal(10, 2)
+  customizations      OrderItemCustomization[]
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model OrderItemCustomization {
+  id                       String              @id @default(uuid()) @db.Uuid
+  orderItemId              String              @map("order_item_id") @db.Uuid
+  orderItem                OrderItem           @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  extraId                  String?             @map("extra_id") @db.Uuid
+  extra                    CustomizationExtra? @relation(fields: [extraId], references: [id], onDelete: SetNull)
+  customText               String?             @map("custom_text")
+  fontId                   String?             @map("font_id") @db.Uuid
+  font                     TypographyFont?     @relation(fields: [fontId], references: [id], onDelete: SetNull)
+  templateId               String?             @map("template_id") @db.Uuid
+  template                 DesignTemplate?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  customerPhotoUrl         String?             @map("customer_photo_url")
+  generatedHighResPrintUrl String?             @map("generated_high_res_print_url")
+  printWidthMm             Decimal?            @map("print_width_mm") @db.Decimal(8, 2)
+  printHeightMm            Decimal?            @map("print_height_mm") @db.Decimal(8, 2)
+  isPrinted                Boolean             @default(false) @map("is_printed")
+
+  @@index([isPrinted, orderItemId])
+  @@map("order_item_customizations")
+}
+
+model WorkshopConfig {
+  id                 String            @id @default(uuid()) @db.Uuid
+  dailyWorkMinutes   Int               @default(480) @map("daily_work_minutes")
+  minimumBufferHours Int               @default(24) @map("minimum_buffer_hours")
+  holidays           WorkshopHoliday[]
+  updatedAt          DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("workshop_config")
+}
+
+model WorkshopHoliday {
+  id               String         @id @default(uuid()) @db.Uuid
+  workshopConfigId String         @map("workshop_config_id") @db.Uuid
+  workshopConfig   WorkshopConfig @relation(fields: [workshopConfigId], references: [id], onDelete: Cascade)
+  holidayDate      DateTime       @map("holiday_date") @db.Date
+  label            String?
+
+  @@unique([workshopConfigId, holidayDate])
+  @@map("workshop_holidays")
+}
+
+model TicketSequence {
+  year       Int @id
+  lastNumber Int @default(0) @map("last_number")
+
+  @@map("ticket_sequences")
+}
+
+model UploadedAsset {
+  id                String   @id @default(uuid()) @db.Uuid
+  purpose           AssetPurpose @default(LEGACY)
+  storageKey        String   @unique @map("storage_key")
+  contentType       String   @map("content_type")
+  sizeBytes         Int      @map("size_bytes")
+  widthPixels       Int      @map("width_pixels")
+  heightPixels      Int      @map("height_pixels")
+  encryptionIv      String   @map("encryption_iv")
+  encryptionAuthTag String   @map("encryption_auth_tag")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([purpose, createdAt])
+  @@map("uploaded_assets")
+}

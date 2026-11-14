@@ -1,0 +1,19 @@
+{
+  "name": "maga-platform",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "auth:local": "node tools/local-admin-auth.mjs",
+    "api:dev": "npm --prefix apps/api run dev",
+    "api:build": "npm --prefix apps/api run build",
+    "api:start": "npm --prefix apps/api run start"
+  },
+  "dependencies": { "@prisma/client": "^6.1.0", "argon2": "^0.41.1", "lucide-react": "^0.468.0", "next": "^15.1.0", "react": "^19.0.0", "react-dom": "^19.0.0" },
+  "devDependencies": { "@types/node": "^22.10.0", "@types/react": "^19.0.0", "prisma": "^6.1.0", "tsx": "^4.19.2", "typescript": "^5.7.0" }
+}

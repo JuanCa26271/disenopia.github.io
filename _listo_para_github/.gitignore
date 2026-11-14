@@ -1,0 +1,35 @@
+# Dependencias
+node_modules/
+**/node_modules/
+
+# Herramientas y bases de datos locales
+.local/
+.tools/
+_listo_para_github/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Compilación y caché
+.next/
+out/
+dist/
+**/dist/
+build/
+*.tsbuildinfo
+
+# Variables de entorno y secretos (conservar ejemplos)
+.env
+.env.*
+!**/.env.example
+
+# Archivos subidos privados
+apps/api/private-uploads/
+private-uploads/
+
+# Archivos del sistema operativo y logs
+.DS_Store
+**/.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
