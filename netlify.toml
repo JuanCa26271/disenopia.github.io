@@ -1,0 +1,83 @@
+# La tienda estática vive en _listo_para_github; se publica tal cual, sin compilar.
+[build]
+  publish = "_listo_para_github"
+  command = ""
+
+# La raíz abre directamente la página de inicio.
+[[redirects]]
+  from = "/"
+  to = "/inicio.html"
+  status = 200
+
+# No exponer código fuente, esquemas de base de datos ni archivos de configuración.
+[[redirects]]
+  from = "/prisma/*"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/apps/*"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/src/*"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/tools/*"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/docs/*"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.env.example"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package.json"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package-lock.json"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/tsconfig.json"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/next.config.ts"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/next-env.d.ts"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/README.md"
+  to = "/404"
+  status = 404
+  force = true
